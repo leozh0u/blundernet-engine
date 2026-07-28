@@ -1,0 +1,18 @@
+[tool.ruff]
+line-length = 100
+extend-exclude = ["cpp/build"]
+
+[tool.ruff.lint]
+# pycodestyle, pyflakes, isort, pyupgrade, flake8-bugbear
+select = ["E", "F", "I", "UP", "B"]
+ignore = [
+    # Semicolon-joined statements read fine for the tight training-step lines.
+    "E702",
+    # zip() here always walks equal-length sequences; strict= adds noise.
+    "B905",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# The package lives under src/, and the compiled C++ core lands in the repo root.
+pythonpath = ["src", "."]
