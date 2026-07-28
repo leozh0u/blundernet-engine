@@ -4,10 +4,7 @@ Top-1 accuracy = how often the net's highest-scored legal move is exactly
 the move the strong player chose. Top-3 counts a hit if the played move is
 among the net's three best.
 """
-import numpy as np
 import torch
-
-from .encode import POLICY_SIZE
 
 
 @torch.no_grad()

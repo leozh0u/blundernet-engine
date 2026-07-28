@@ -42,7 +42,7 @@ def search(board: chess.Board, model, simulations: int = 200,
             return
         x = torch.from_numpy(np.stack([encode_board(b) for _, b, _ in pending]))
         logits, values = model(x)
-        for row, (leaf, b, moves) in enumerate(pending):
+        for row, (leaf, _board, moves) in enumerate(pending):
             idxs = torch.tensor([move_to_index(m) for m in moves])
             priors = torch.softmax(logits[row][idxs], dim=0).tolist()
             node_moves[leaf] = moves

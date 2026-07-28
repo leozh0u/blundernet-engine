@@ -54,17 +54,17 @@ def play_game(white_fn, black_fn, max_plies: int = 300) -> str:
 
 def match(engine_fn, opponent_fn, games: int = 20, max_plies: int = 300) -> dict:
     """Play a color-alternating match. Returns W/D/L from the engine's view."""
-    w = d = l = 0
+    wins = draws = losses = 0
     for g in range(games):
         if g % 2 == 0:
             result = play_game(engine_fn, opponent_fn, max_plies)
-            w += result == "1-0"; l += result == "0-1"
+            wins += result == "1-0"; losses += result == "0-1"
         else:
             result = play_game(opponent_fn, engine_fn, max_plies)
-            w += result == "0-1"; l += result == "1-0"
-        d += result == "1/2-1/2"
-    score = (w + 0.5 * d) / games
-    return {"wins": w, "draws": d, "losses": l, "games": games,
+            wins += result == "0-1"; losses += result == "1-0"
+        draws += result == "1/2-1/2"
+    score = (wins + 0.5 * draws) / games
+    return {"wins": wins, "draws": draws, "losses": losses, "games": games,
             "score": round(score, 3), "elo_diff": elo_diff(score)}
 
 

@@ -65,7 +65,8 @@ def make_chart() -> None:
 
     axes[1].plot(steps, [100 * v for v in col("top1")], label="top-1")
     axes[1].plot(steps, [100 * v for v in col("top3")], label="top-3")
-    axes[1].set_title("held-out move prediction (%)"); axes[1].set_xlabel("optimizer steps"); axes[1].legend()
+    axes[1].set_title("held-out move prediction (%)")
+    axes[1].set_xlabel("optimizer steps"); axes[1].legend()
 
     for b in ("puzzle_800-1200", "puzzle_1200-1600", "puzzle_1600-2000",
               "puzzle_2000-2400", "puzzle_2400-+"):
@@ -125,7 +126,8 @@ def main() -> None:
     acc = move_accuracy(model, *holdout)
     row = {
         "timestamp": now.isoformat(timespec="seconds"),
-        **{k: last_train[k] for k in ("steps", "samples_seen", "loss", "policy_loss", "value_loss")},
+        **{k: last_train[k]
+           for k in ("steps", "samples_seen", "loss", "policy_loss", "value_loss")},
         "games": last_summary["games"],
         "positions": last_summary["positions"],
         **{k: round(acc[k], 4) for k in ("top1", "top3")},

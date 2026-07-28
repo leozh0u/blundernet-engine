@@ -28,17 +28,17 @@ def main() -> None:
     ap.add_argument("--commit", action="store_true")
     args = ap.parse_args()
 
-    from blundernet.arena import match, material_greedy, random_mover
     from blundernet import mcts_cpp
+    from blundernet.arena import match, material_greedy, random_mover
     if mcts_cpp.AVAILABLE:
         from blundernet.mcts_cpp import best_move
         print("using C++ batched MCTS core")
     else:
         from blundernet.mcts import best_move
-    from blundernet.train import load_model
-    from blundernet.encode import encode_board, move_to_index, legal_move_mask
     import chess
-    import numpy as np
+
+    from blundernet.encode import encode_board, legal_move_mask, move_to_index
+    from blundernet.train import load_model
 
     model, _, meta = load_model()
     model.eval()

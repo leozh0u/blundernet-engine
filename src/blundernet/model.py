@@ -1,5 +1,8 @@
-"""Small AlphaZero-style residual policy+value network (~450k params, CPU-friendly)."""
-import torch
+"""Small AlphaZero-style residual policy+value network (2.57M params, CPU-friendly).
+
+Most of that is the policy head's 512 -> 4096 projection; the residual trunk
+is only 444k. See tests/test_model.py for the budget the shapes are held to.
+"""
 import torch.nn as nn
 import torch.nn.functional as F
 

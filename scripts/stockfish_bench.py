@@ -44,8 +44,8 @@ def main() -> None:
     if not sf_path:
         sys.exit("stockfish not found on PATH")
 
-    from blundernet.arena import match, elo_diff
-    from blundernet import mcts_cpp, mcts
+    from blundernet import mcts, mcts_cpp
+    from blundernet.arena import match
     from blundernet.train import load_model
 
     engine_mod = mcts_cpp if mcts_cpp.AVAILABLE else mcts

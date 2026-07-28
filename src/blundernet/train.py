@@ -1,5 +1,4 @@
 """Incremental training: one run = one pass over a freshly fetched batch."""
-import json
 from pathlib import Path
 
 import numpy as np
