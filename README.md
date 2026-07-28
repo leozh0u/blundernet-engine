@@ -1,5 +1,8 @@
 # blundernet
 
+[![train](https://github.com/leozh0u/blundernet/actions/workflows/train.yml/badge.svg)](https://github.com/leozh0u/blundernet/actions/workflows/train.yml)
+[![tests](https://github.com/leozh0u/blundernet/actions/workflows/tests.yml/badge.svg)](https://github.com/leozh0u/blundernet/actions/workflows/tests.yml)
+
 A chess engine that trains itself. A small AlphaZero-style network learns
 from fresh games by top Lichess blitz players, plays through Monte-Carlo
 tree search with a C++ core, and measures its own strength against
@@ -29,12 +32,16 @@ self-play games whose search output feeds back into training.
 ## The model
 
 18 input planes (piece positions, side to move, castling rights, en
-passant file) into a 6-block residual CNN, 64 channels, about 450k
-parameters. Two heads: a policy over 4096 from-square/to-square move
-indices and a tanh value head. Trained with the standard AlphaZero
-supervised objective, cross-entropy on the played move plus MSE on the
-game result. Small on purpose: every run trains on free CI hardware in
-about two minutes.
+passant file) into a 6-block residual CNN, 64 channels. Two heads: a policy
+over 4096 from-square/to-square move indices and a tanh value head. Trained
+with the standard AlphaZero supervised objective, cross-entropy on the
+played move plus MSE on the game result.
+
+2.57M parameters, and the split is lopsided: the residual trunk is 444k, the
+value head 17k, and the remaining 2.1M is one dense layer projecting 512
+features onto the 4096-move policy. Shrinking the network means attacking
+that projection, not the trunk. Small enough either way that a run trains on
+free CI hardware in about two minutes.
 
 ## Search
 
@@ -91,10 +98,24 @@ python scripts/stockfish_bench.py         # needs stockfish on PATH
 src/blundernet/   encoding, model, data ingestion, training, evaluation, MCTS
 cpp/              C++ tree core (pybind11)
 scripts/          pipeline, benchmarks, gauntlet, self-play, puzzle-set builder
+tests/            encoding, network shapes, search invariants, match bookkeeping
 metrics/          history CSVs, latest results, training curves
 data/             puzzle suite + ingest state
-.github/          the scheduled training workflow
+.github/          the scheduled training workflow and the test workflow
 ```
+
+## Tests
+
+```bash
+pytest
+```
+
+The encoding is the contract between chess and the network, so most of the suite
+guards it: plane layout, move-index round trips, and the legal mask against
+python-chess. The rest covers network shapes and the parameter budget, search
+invariants that hold at any weights (legal moves only, visit counts that add up,
+finding mate in one from an untrained net), and the match and Elo arithmetic the
+strength numbers are built on.
 
 Design choices, tradeoffs, and the bugs worth remembering are in
 [DECISIONS.md](DECISIONS.md).
