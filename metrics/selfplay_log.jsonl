@@ -15,3 +15,4 @@
 {"timestamp": "2026-07-24T05:35:50+00:00", "games": 2, "sims": 96, "results": ["0-1", "0-1"], "positions": 202, "loss": 4.4017, "steps": 2744}
 {"timestamp": "2026-07-25T05:30:37+00:00", "games": 2, "sims": 96, "results": ["0-1", "1/2-1/2"], "positions": 215, "loss": 4.1035, "steps": 2746}
 {"timestamp": "2026-07-26T05:47:36+00:00", "games": 2, "sims": 96, "results": ["0-1", "1/2-1/2"], "positions": 125, "loss": 3.9001, "steps": 2747}
+{"timestamp": "2026-07-28T05:29:37+00:00", "games": 2, "sims": 96, "results": ["1-0", "1/2-1/2"], "positions": 244, "loss": 4.4253, "steps": 2749}
