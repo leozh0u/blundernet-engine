@@ -17,6 +17,10 @@ from .encode import encode_board, move_to_index
 
 API = "https://lichess.org/api/games/user/{user}"
 
+# Lichess rejects requests without an identifying User-Agent (404) per its
+# API policy, and asks clients to wait a full minute after any 429.
+HEADERS = {"User-Agent": "blundernet/1.0 (github.com/leozh0u/blundernet)"}
+
 # Fallback pool if the leaderboard fetch fails (strong, high-volume players)
 FALLBACK_PLAYERS = [
     "penguingim1", "nihalsarin2004", "RebeccaHarris", "Zhigalko_Sergei",
@@ -29,7 +33,8 @@ def get_players() -> list[str]:
     """Current top-50 blitz leaderboard — active players by construction."""
     try:
         r = requests.get("https://lichess.org/api/player/top/50/blitz",
-                         headers={"Accept": "application/vnd.lichess.v3+json"},
+                         headers={"Accept": "application/vnd.lichess.v3+json",
+                                  **HEADERS},
                          timeout=30)
         r.raise_for_status()
         users = [u["username"] for u in r.json()["users"]]
@@ -63,14 +68,20 @@ def fetch_games(user: str, since_ms: int | None, max_games: int = 60) -> str:
     }
     if since_ms is not None:
         params["since"] = since_ms
-    r = requests.get(
-        API.format(user=user),
-        params=params,
-        headers={"Accept": "application/x-chess-pgn"},
-        timeout=120,
-    )
-    r.raise_for_status()
-    return r.text
+    for attempt in (1, 2):
+        r = requests.get(
+            API.format(user=user),
+            params=params,
+            headers={"Accept": "application/x-chess-pgn", **HEADERS},
+            timeout=120,
+        )
+        if r.status_code == 429 and attempt == 1:
+            print("rate limited by lichess; waiting 65s as their policy asks")
+            time.sleep(65)
+            continue
+        r.raise_for_status()
+        return r.text
+    return ""
 
 
 def pgn_to_samples(pgn_text: str, seen_ids: set | None = None,
@@ -141,7 +152,7 @@ def gather_batch(n_players: int = 3, max_games: int = 100,
         games_total += n_games
         state["cursor"][user] = now_ms
         used.append({"player": user, "games": n_games})
-        time.sleep(1)  # be polite to the API
+        time.sleep(3)  # be polite to the API
 
     state["rotation"] = (state["rotation"] + i) % len(players)
     state["seen_ids"] = sorted(seen_ids)[-20000:]  # cap state file size
