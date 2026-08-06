@@ -77,3 +77,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: bash scripts/ci_release.sh
+
+      - name: Raise data-starvation alarm
+        run: |
+          if [ -f .starvation_alarm ]; then
+            echo "::error::ingest has produced no games for $(cat .starvation_alarm) — the data source is likely broken"
+            exit 1
+          fi

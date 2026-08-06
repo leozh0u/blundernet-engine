@@ -116,12 +116,28 @@ def main() -> None:
             args.no_commit,
         )
 
+    state_path = Path("data/state.json")
     if last_train is None:
         # No new games this run: the ingest cursor still advanced, so commit
         # that so the working tree is clean for the workflow's push step.
-        print("no new games this run; committing cursor advance")
+        # Track consecutive dry runs and fail LOUDLY after ~1.5 days of them:
+        # a quietly green pipeline that has stopped learning is the worst
+        # failure mode (it hid a 15-day ingestion outage in July 2026).
+        state = json.loads(state_path.read_text())
+        state["dry_runs"] = state.get("dry_runs", 0) + 1
+        state_path.write_text(json.dumps(state, indent=2) + "\n")
+        print(f"no new games this run ({state['dry_runs']} dry runs in a row)")
         git_commit("data: advance ingest cursor (no new games this run)", args.no_commit)
+        if state["dry_runs"] >= 8:
+            # Flag rather than exit: the workflow fails the run AFTER the
+            # push step, so the alarm never blocks commits from landing.
+            Path(".starvation_alarm").write_text(
+                f"{state['dry_runs']} consecutive runs with no games\n")
         return
+    state = json.loads(state_path.read_text())
+    if state.get("dry_runs"):
+        state["dry_runs"] = 0
+        state_path.write_text(json.dumps(state, indent=2) + "\n")
 
     acc = move_accuracy(model, *holdout)
     row = {
