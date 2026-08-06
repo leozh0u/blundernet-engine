@@ -19,7 +19,7 @@ API = "https://lichess.org/api/games/user/{user}"
 
 # Lichess rejects requests without an identifying User-Agent (404) per its
 # API policy, and asks clients to wait a full minute after any 429.
-HEADERS = {"User-Agent": "blundernet/1.0 (github.com/leozh0u/blundernet)"}
+HEADERS = {"User-Agent": "blundernet/1.0 (github.com/leozh0u/blundernet-engine)"}
 
 # Fallback pool if the leaderboard fetch fails (strong, high-volume players)
 FALLBACK_PLAYERS = [

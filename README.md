@@ -1,7 +1,7 @@
 # blundernet
 
-[![train](https://github.com/leozh0u/blundernet/actions/workflows/train.yml/badge.svg)](https://github.com/leozh0u/blundernet/actions/workflows/train.yml)
-[![tests](https://github.com/leozh0u/blundernet/actions/workflows/tests.yml/badge.svg)](https://github.com/leozh0u/blundernet/actions/workflows/tests.yml)
+[![train](https://github.com/leozh0u/blundernet-engine/actions/workflows/train.yml/badge.svg)](https://github.com/leozh0u/blundernet-engine/actions/workflows/train.yml)
+[![tests](https://github.com/leozh0u/blundernet-engine/actions/workflows/tests.yml/badge.svg)](https://github.com/leozh0u/blundernet-engine/actions/workflows/tests.yml)
 
 A chess engine that trains itself. A small AlphaZero-style network learns
 from fresh games by top Lichess blitz players, plays through Monte-Carlo
