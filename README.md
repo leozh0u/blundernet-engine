@@ -1,12 +1,17 @@
-# blundernet
+# BlunderNet Engine
 
 [![train](https://github.com/leozh0u/blundernet-engine/actions/workflows/train.yml/badge.svg)](https://github.com/leozh0u/blundernet-engine/actions/workflows/train.yml)
 [![tests](https://github.com/leozh0u/blundernet-engine/actions/workflows/tests.yml/badge.svg)](https://github.com/leozh0u/blundernet-engine/actions/workflows/tests.yml)
 
-A chess engine that trains itself. A small AlphaZero-style network learns
-from fresh games by top Lichess blitz players, plays through Monte-Carlo
-tree search with a C++ core, and measures its own strength against
-Stockfish. The whole loop runs on a schedule with no human in it.
+A chess engine that retrains itself on a schedule, with no human in the
+loop. A small AlphaZero-style network learns from fresh games by top
+Lichess blitz players, plays through Monte-Carlo tree search with a C++
+core, and measures its own strength against Stockfish.
+
+The learning is mostly supervised. Self-play runs too and feeds its search
+output back into training, but at a few CPU games a day it is a measured
+component rather than the thing driving strength. [Play the engine
+online](https://github.com/leozh0u/blundernet).
 
 ![training curves](metrics/curve.png)
 
