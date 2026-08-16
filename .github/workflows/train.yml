@@ -2,10 +2,9 @@ name: train
 
 on:
   schedule:
-    # 3 runs/day (UTC), off-beat minutes; each run makes 2-5 commits
+    # 2 slots/day (UTC): morning always trains, afternoon joins ~half of days
     - cron: "23 2 * * *"
-    - cron: "41 10 * * *"
-    - cron: "53 18 * * *"
+    - cron: "41 14 * * *"
   workflow_dispatch:
 
 permissions:
@@ -49,23 +48,34 @@ jobs:
 
       - name: Run training pipeline
         run: |
-          # First run of the day also refreshes the chart + strength benchmarks.
+          # Daily volume is randomized so the cadence looks organic rather
+          # than metronomic. The morning run always trains (guarantees the
+          # day is never empty); benchmarks join it roughly 1 day in 4; the
+          # afternoon run sits out roughly half of days entirely.
           # The pipeline is load-bearing; the benchmarks are best-effort. A
           # benchmark crash must not block the push of commits already made,
           # so each one warns instead of failing the run.
           if [ "$(date -u +%H)" -lt 6 ]; then
-            python scripts/pipeline.py --chart
-            sudo apt-get install -y -q stockfish || echo "::warning::stockfish install failed; skipping anchor benchmark"
-            python scripts/gauntlet.py --games 12 --sims 64 --commit \
-              || echo "::warning::gauntlet failed this run"
-            if command -v stockfish >/dev/null; then
-              python scripts/stockfish_bench.py --games 8 --sims 128 --levels 0 1 3 --commit \
-                || echo "::warning::stockfish benchmark failed this run"
+            if [ $((RANDOM % 4)) -eq 0 ]; then
+              python scripts/pipeline.py --chart
+              sudo apt-get install -y -q stockfish || echo "::warning::stockfish install failed; skipping anchor benchmark"
+              python scripts/gauntlet.py --games 12 --sims 64 --commit \
+                || echo "::warning::gauntlet failed this run"
+              if command -v stockfish >/dev/null; then
+                python scripts/stockfish_bench.py --games 8 --sims 128 --levels 0 1 3 --commit \
+                  || echo "::warning::stockfish benchmark failed this run"
+              fi
+              python scripts/selfplay.py --games 2 --sims 96 --commit \
+                || echo "::warning::selfplay failed this run"
+            else
+              python scripts/pipeline.py
             fi
-            python scripts/selfplay.py --games 2 --sims 96 --commit \
-              || echo "::warning::selfplay failed this run"
           else
-            python scripts/pipeline.py
+            if [ $((RANDOM % 2)) -eq 0 ]; then
+              echo "afternoon run sitting this day out (randomized cadence)"
+            else
+              python scripts/pipeline.py
+            fi
           fi
 
       - name: Push commits

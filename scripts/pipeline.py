@@ -95,7 +95,7 @@ def main() -> None:
     now = dt.datetime.now(dt.timezone.utc)
     # 1-3 ingest/train sub-batches, varying by day+hour so runs differ in size
     rng = np.random.default_rng(now.year * 10_000 + now.month * 100 + now.day + now.hour)
-    n_batches = int(rng.integers(1, 4))
+    n_batches = int(rng.integers(1, 3))
     print(f"run at {now.isoformat()} -> {n_batches} batch(es)")
 
     last_train, last_summary, holdout = None, None, None
