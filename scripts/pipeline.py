@@ -84,6 +84,10 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-commit", action="store_true")
     ap.add_argument("--chart", action="store_true")
+    ap.add_argument("--commits", type=int, default=None,
+                    help="target number of commits this run (training volume "
+                         "is unaffected; work is squashed to fit). Default: "
+                         "one commit per stage, as before.")
     args = ap.parse_args()
 
     from blundernet.data import gather_batch
@@ -93,12 +97,36 @@ def main() -> None:
 
     model, opt, meta = load_model()
     now = dt.datetime.now(dt.timezone.utc)
-    # 1-3 ingest/train sub-batches, varying by day+hour so runs differ in size
     rng = np.random.default_rng(now.year * 10_000 + now.month * 100 + now.day + now.hour)
-    n_batches = int(rng.integers(1, 3))
-    print(f"run at {now.isoformat()} -> {n_batches} batch(es)")
+
+    # Training volume and commit count are independent: always train 2-3
+    # batches, then emit however many commits were asked for. --commits 1
+    # squashes the whole run into a single commit; the default keeps the
+    # old one-commit-per-stage behavior.
+    if args.commits is None:
+        n_batches = int(rng.integers(2, 4))
+        train_commit_budget = n_batches
+        split_eval = True
+    else:
+        n_batches = int(rng.integers(2, 4))
+        train_commit_budget = max(0, args.commits - 2)
+        split_eval = args.commits >= 2
+    print(f"run at {now.isoformat()} -> {n_batches} batch(es), "
+          f"commits target {args.commits or 'per-stage'}")
+
+    pending = []  # accumulated stage summaries awaiting a commit
+
+    def flush(subject=None):
+        if not pending:
+            return
+        msg = subject or pending[0]
+        if len(pending) > 1:
+            msg += "\n\n" + "\n".join(f"- {p}" for p in pending)
+        git_commit(msg, args.no_commit)
+        pending.clear()
 
     last_train, last_summary, holdout = None, None, None
+    total_games = total_positions = 0
     for b in range(n_batches):
         X, policy, value, summary = gather_batch(n_players=2)
         if X is None:
@@ -110,11 +138,14 @@ def main() -> None:
         stats = train_on_batch(model, opt, meta, X[n_hold:], policy[n_hold:], value[n_hold:])
         save_model(model, opt, meta)
         last_train, last_summary = stats, summary
-        git_commit(
+        total_games += summary["games"]
+        total_positions += summary["positions"]
+        pending.append(
             f"train: {summary['games']} games / {summary['positions']} positions, "
-            f"loss {stats['loss']:.3f} @ step {stats['steps']}",
-            args.no_commit,
-        )
+            f"loss {stats['loss']:.3f} @ step {stats['steps']}")
+        if train_commit_budget > 0:
+            flush()
+            train_commit_budget -= 1
 
     state_path = Path("data/state.json")
     if last_train is None:
@@ -150,11 +181,11 @@ def main() -> None:
     }
     METRICS_DIR.mkdir(exist_ok=True)
     LATEST.write_text(json.dumps({**row, **acc}, indent=2) + "\n")
-    git_commit(
+    pending.append(
         f"eval: top-1 {acc['top1']:.1%} / top-3 {acc['top3']:.1%} "
-        f"on {acc['eval_positions']} held-out positions",
-        args.no_commit,
-    )
+        f"on {acc['eval_positions']} held-out positions")
+    if split_eval:
+        flush()
 
     # tactics puzzle suite (fixed, bucketed by difficulty)
     puz = evaluate_puzzles(model)
@@ -167,11 +198,16 @@ def main() -> None:
             for k, v in puz.items()
             if k.startswith("puzzle_") and k not in ("puzzle_overall", "puzzle_n")
         )
-        git_commit(
+        pending.append(
             f"puzzles: {puz['puzzle_overall']:.1%} overall on {puz['puzzle_n']} "
-            f"tactics  [{by_bucket}]",
-            args.no_commit,
-        )
+            f"tactics  [{by_bucket}]")
+    # final flush: everything not yet committed lands here. With --commits 1
+    # this is the whole run in one commit.
+    if len(pending) > 1:
+        flush(f"training update: {total_games} games / {total_positions} positions, "
+              f"top-1 {acc['top1']:.1%}, puzzles {puz.get('puzzle_overall', 0):.1%}")
+    else:
+        flush()
 
     if args.chart:
         make_chart()
