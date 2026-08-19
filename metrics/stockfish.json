@@ -1,42 +1,42 @@
 {
-  "timestamp": "2026-08-16T03:20:11+00:00",
-  "steps": 4562,
+  "timestamp": "2026-08-19T03:17:31+00:00",
+  "steps": 4830,
   "sims": 128,
   "games_per_level": 8,
   "levels": {
     "0": {
-      "wins": 0,
-      "draws": 1,
-      "losses": 7,
-      "games": 8,
-      "score": 0.062,
-      "elo_diff": -470.4,
-      "sf_level": 0,
-      "sf_elo_anchor": 1320,
-      "implied_engine_elo": 850
-    },
-    "1": {
       "wins": 0,
       "draws": 0,
       "losses": 8,
       "games": 8,
       "score": 0.0,
       "elo_diff": -1199.8,
-      "sf_level": 1,
-      "sf_elo_anchor": 1470,
-      "implied_engine_elo": 270
+      "sf_level": 0,
+      "sf_elo_anchor": 1320,
+      "implied_engine_elo": 120
     },
-    "3": {
+    "1": {
       "wins": 0,
       "draws": 1,
       "losses": 7,
       "games": 8,
       "score": 0.062,
       "elo_diff": -470.4,
+      "sf_level": 1,
+      "sf_elo_anchor": 1470,
+      "implied_engine_elo": 1000
+    },
+    "3": {
+      "wins": 0,
+      "draws": 0,
+      "losses": 8,
+      "games": 8,
+      "score": 0.0,
+      "elo_diff": -1199.8,
       "sf_level": 3,
       "sf_elo_anchor": 1740,
-      "implied_engine_elo": 1270
+      "implied_engine_elo": 540
     }
   },
-  "elo_estimate": 1060
+  "elo_estimate": 1000
 }
