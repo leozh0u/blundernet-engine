@@ -1,38 +1,38 @@
 {
-  "timestamp": "2026-08-16T03:18:52+00:00",
-  "steps": 4562,
+  "timestamp": "2026-08-19T03:16:20+00:00",
+  "steps": 4830,
   "sims": 64,
   "games_per_match": 12,
   "policy_vs_random": {
-    "wins": 0,
-    "draws": 12,
-    "losses": 0,
+    "wins": 3,
+    "draws": 8,
+    "losses": 1,
+    "games": 12,
+    "score": 0.583,
+    "elo_diff": 58.5
+  },
+  "policy_vs_material": {
+    "wins": 1,
+    "draws": 10,
+    "losses": 1,
     "games": 12,
     "score": 0.5,
     "elo_diff": -0.0
   },
-  "policy_vs_material": {
-    "wins": 0,
-    "draws": 10,
-    "losses": 2,
-    "games": 12,
-    "score": 0.417,
-    "elo_diff": -58.5
-  },
   "mcts_vs_random": {
-    "wins": 3,
-    "draws": 9,
+    "wins": 6,
+    "draws": 6,
     "losses": 0,
     "games": 12,
-    "score": 0.625,
-    "elo_diff": 88.7
+    "score": 0.75,
+    "elo_diff": 190.8
   },
   "mcts_vs_material": {
-    "wins": 5,
+    "wins": 3,
     "draws": 7,
-    "losses": 0,
+    "losses": 2,
     "games": 12,
-    "score": 0.708,
-    "elo_diff": 154.1
+    "score": 0.542,
+    "elo_diff": 29.0
   }
 }
