@@ -29,16 +29,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Skip if the day is already green
+      - name: Skip unless an active day is missing its commits
         id: guard
         run: |
+          # Same date-seeded predicate as train.yml: most days are quiet on
+          # purpose, and the backup must not "rescue" them. It only steps in
+          # when a day scheduled to be active has produced nothing.
+          seed=$(date -u +%Y%m%d)
+          H=$(( (seed * 1103515245 + 12345) / 65536 ))
+          if [ $(( H % 5 )) -ge 2 ]; then
+            echo "quiet day by design; backup will no-op"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           today=$(date -u +%F)
           last=$(TZ=UTC git log -1 --date=format-local:%F --format=%cd)
           if [ "$last" = "$today" ]; then
-            echo "already committed today ($last); backup will no-op"
+            echo "active day already has commits ($last); backup will no-op"
             echo "run=false" >> "$GITHUB_OUTPUT"
           else
-            echo "no commit yet today (last=$last); backup will run"
+            echo "active day with no commits yet (last=$last); backup will run"
             echo "run=true" >> "$GITHUB_OUTPUT"
           fi
 

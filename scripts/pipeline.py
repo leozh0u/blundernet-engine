@@ -99,16 +99,16 @@ def main() -> None:
     now = dt.datetime.now(dt.timezone.utc)
     rng = np.random.default_rng(now.year * 10_000 + now.month * 100 + now.day + now.hour)
 
-    # Training volume and commit count are independent: always train 2-3
-    # batches, then emit however many commits were asked for. --commits 1
-    # squashes the whole run into a single commit; the default keeps the
-    # old one-commit-per-stage behavior.
+    # Commit count controls grouping; training volume scales with it so
+    # big burst days also train more (2 batches minimum, 8 at most).
+    # --commits 1 squashes the whole run into a single commit; the default
+    # keeps the old one-commit-per-stage behavior.
     if args.commits is None:
         n_batches = int(rng.integers(2, 4))
         train_commit_budget = n_batches
         split_eval = True
     else:
-        n_batches = int(rng.integers(2, 4))
+        n_batches = max(2, min(8, args.commits - 2))
         train_commit_budget = max(0, args.commits - 2)
         split_eval = args.commits >= 2
     print(f"run at {now.isoformat()} -> {n_batches} batch(es), "

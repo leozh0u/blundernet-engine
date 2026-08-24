@@ -48,20 +48,27 @@ jobs:
 
       - name: Run training pipeline
         run: |
-          # Each day draws its own commit target T in [3,10], seeded by the
-          # date so both runs agree on the plan. Training volume is the same
-          # every run regardless (2-3 full batches); T only controls how the
-          # work is grouped into commits. High-T days (>=9) also run the
-          # benchmark suite, whose commits are part of the budget.
-          # The pipeline is load-bearing; the benchmarks are best-effort and
-          # warn instead of failing the run.
+          # Roughly 2 days in 5 are active; the rest are quiet, so activity
+          # comes in bursts every 2-3 days rather than a daily drip. An
+          # active day draws a commit target T in [5,20]. Both decisions are
+          # seeded by the date so every run (and the backup) agrees on the
+          # plan. Training volume scales WITH the target (bigger burst days
+          # train more batches), and T only controls commit grouping beyond
+          # that. High-T days (>=15) also run the benchmark suite, whose
+          # commits are part of the budget. The pipeline is load-bearing;
+          # the benchmarks are best-effort and warn instead of failing.
           seed=$(date -u +%Y%m%d)
-          T=$(( (seed * 1103515245 + 12345) / 65536 % 8 + 3 ))
-          A=$(( T / 3 ))                      # afternoon's share (0-3)
+          H=$(( (seed * 1103515245 + 12345) / 65536 ))
+          if [ $(( H % 5 )) -ge 2 ]; then
+            echo "quiet day (activity comes in bursts); nothing to do"
+            exit 0
+          fi
+          T=$(( H / 7 % 16 + 5 ))
+          A=$(( T / 3 ))                      # afternoon's share
           M=$(( T - A ))                      # morning's share
-          echo "daily commit target T=$T (morning $M, afternoon $A)"
+          echo "active day: commit target T=$T (morning $M, afternoon $A)"
           if [ "$(date -u +%H)" -lt 6 ]; then
-            if [ "$T" -ge 9 ]; then
+            if [ "$T" -ge 15 ]; then
               B=$(( M - 4 )); [ "$B" -lt 1 ] && B=1
               python scripts/pipeline.py --commits "$B" --chart
               sudo apt-get install -y -q stockfish || echo "::warning::stockfish install failed; skipping anchor benchmark"
@@ -77,11 +84,7 @@ jobs:
               python scripts/pipeline.py --commits "$M"
             fi
           else
-            if [ "$A" -lt 1 ]; then
-              echo "afternoon run sitting this day out (daily target already met)"
-            else
-              python scripts/pipeline.py --commits "$A"
-            fi
+            python scripts/pipeline.py --commits "$A"
           fi
 
       - name: Push commits
