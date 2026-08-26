@@ -38,3 +38,4 @@
 {"timestamp": "2026-08-16T03:22:26+00:00", "games": 2, "sims": 96, "results": ["1-0", "1/2-1/2"], "positions": 183, "loss": 3.9281, "steps": 4564}
 {"timestamp": "2026-08-19T03:20:00+00:00", "games": 2, "sims": 96, "results": ["1/2-1/2", "1-0"], "positions": 169, "loss": 3.9526, "steps": 4832}
 {"timestamp": "2026-08-23T03:32:06+00:00", "games": 2, "sims": 96, "results": ["1/2-1/2", "1/2-1/2"], "positions": 143, "loss": 3.6533, "steps": 5198}
+{"timestamp": "2026-08-26T03:35:00+00:00", "games": 2, "sims": 96, "results": ["1-0", "0-1"], "positions": 207, "loss": 4.0605, "steps": 5414}
