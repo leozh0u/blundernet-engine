@@ -11,8 +11,8 @@ core, and measures its own strength against Stockfish.
 The learning is mostly supervised. Self-play runs too and feeds its search
 output back into training, but at a few CPU games a day it is a measured
 component rather than the thing driving strength. You can play it at
-[blundernet.com](https://blundernet.com), which is
-[this repo](https://github.com/leozh0u/blundernet).
+[blundernet.com](https://blundernet.com), served by
+[blundernet](https://github.com/leozh0u/blundernet).
 
 ![training curves](metrics/curve.png)
 
