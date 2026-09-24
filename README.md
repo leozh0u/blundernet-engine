@@ -10,8 +10,9 @@ core, and measures its own strength against Stockfish.
 
 The learning is mostly supervised. Self-play runs too and feeds its search
 output back into training, but at a few CPU games a day it is a measured
-component rather than the thing driving strength. [Play the engine
-online](https://github.com/leozh0u/blundernet).
+component rather than the thing driving strength. You can play it at
+[blundernet.com](https://blundernet.com), which is
+[this repo](https://github.com/leozh0u/blundernet).
 
 ![training curves](metrics/curve.png)
 
@@ -139,6 +140,6 @@ Design choices, tradeoffs, and the bugs worth remembering are in
 - [x] PUCT MCTS, plus the C++ batched core
 - [x] Baseline gauntlet and Stockfish-anchored Elo tracking
 - [x] Self-play training loop
-- [ ] Lichess bot account, so anyone can play it
+- [x] Playable online at [blundernet.com](https://blundernet.com)
 - [ ] Elo-bucketed training: does a net trained on 1500s differ from one
       trained on 2800s?
