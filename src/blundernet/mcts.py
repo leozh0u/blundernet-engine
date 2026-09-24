@@ -56,6 +56,10 @@ def _terminal_value(board: chess.Board) -> float | None:
 def search(board: chess.Board, model, simulations: int = 200,
            c_puct: float = 1.5, dirichlet_eps: float = 0.0) -> dict:
     """Run MCTS from `board`. Returns {move: visit_count} at the root."""
+    if simulations < 1:
+        raise ValueError("simulations must be positive")
+    if board.is_game_over():
+        return {}
     model.eval()
     root = Node(0.0)
     _expand(root, board, model)
@@ -68,7 +72,7 @@ def search(board: chess.Board, model, simulations: int = 200,
 
     for _ in range(simulations):
         node, path = root, []
-        b = board.copy(stack=False)
+        b = board.copy()
 
         # 1. SELECT: walk down via PUCT until we hit a leaf
         while node.children:
@@ -101,10 +105,15 @@ def best_move(board: chess.Board, model, simulations: int = 200,
               temperature: float = 0.0) -> chess.Move:
     """Pick a move: argmax visits (T=0) or sample proportional to visits^(1/T)."""
     visits = search(board, model, simulations)
+    if not visits:
+        raise ValueError("cannot choose a move: game is over")
     moves, counts = zip(*visits.items())
     counts = np.array(counts, dtype=np.float64)
     if temperature <= 1e-6:
         return moves[int(counts.argmax())]
-    probs = counts ** (1.0 / temperature)
+    # Scale before exponentiation to avoid overflow at low temperatures.
+    if not counts.any():
+        counts.fill(1)
+    probs = (counts / counts.max()) ** (1.0 / temperature)
     probs /= probs.sum()
     return moves[int(np.random.choice(len(moves), p=probs))]

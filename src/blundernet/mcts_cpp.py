@@ -24,6 +24,12 @@ def search(board: chess.Board, model, simulations: int = 200,
            c_puct: float = 1.5, batch_size: int = 16,
            dirichlet_eps: float = 0.0) -> dict:
     """Run batched MCTS. Returns {move: visit_count} at the root."""
+    if batch_size < 1:
+        raise ValueError("batch_size must be positive")
+    if simulations < 1:
+        raise ValueError("simulations must be positive")
+    if board.is_game_over():
+        return {}
     model.eval()
     tree = blundercore.Tree(c_puct)
     node_moves = {}  # node_id -> ordered list of legal moves (child slots)
@@ -62,7 +68,7 @@ def search(board: chess.Board, model, simulations: int = 200,
             break  # every path converged on an in-flight leaf
         boards = []
         for path in paths:
-            b = board.copy(stack=False)
+            b = board.copy()
             for parent_id, slot, _child_id in path:
                 b.push(node_moves[parent_id][slot])
             boards.append(b)
@@ -75,10 +81,15 @@ def search(board: chess.Board, model, simulations: int = 200,
 def best_move(board: chess.Board, model, simulations: int = 200,
               temperature: float = 0.0, batch_size: int = 16) -> chess.Move:
     visits = search(board, model, simulations, batch_size=batch_size)
+    if not visits:
+        raise ValueError("cannot choose a move: game is over")
     moves, counts = zip(*visits.items())
     counts = np.array(counts, dtype=np.float64)
     if temperature <= 1e-6:
         return moves[int(counts.argmax())]
-    probs = counts ** (1.0 / temperature)
+    # Scale before exponentiation to avoid overflow at low temperatures.
+    if not counts.any():
+        counts.fill(1)
+    probs = (counts / counts.max()) ** (1.0 / temperature)
     probs /= probs.sum()
     return moves[int(np.random.choice(len(moves), p=probs))]

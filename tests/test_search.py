@@ -89,3 +89,73 @@ def test_stalemate_is_a_draw():
 
     assert stalemate.is_stalemate()
     assert mcts._terminal_value(stalemate) == 0.0
+
+
+@pytest.fixture(params=["python", "cpp"])
+def search_backend(request):
+    from blundernet import mcts_cpp
+
+    if request.param == "cpp":
+        if not mcts_cpp.AVAILABLE:
+            pytest.skip("C++ extension not built")
+        return mcts_cpp
+    return mcts
+
+
+@pytest.mark.parametrize("fen", [
+    "7k/5Q2/6K1/8/8/8/8/8 b - - 0 1",  # stalemate
+    "7k/6Q1/6K1/8/8/8/8/8 b - - 0 1",  # checkmate
+    "7k/8/6K1/8/8/8/8/8 w - - 0 1",  # insufficient material
+])
+def test_finished_game_has_no_search_moves(search_backend, model, fen):
+    board = chess.Board(fen)
+    assert search_backend.search(board, model, simulations=4) == {}
+    with pytest.raises(ValueError, match="game is over"):
+        search_backend.best_move(board, model, simulations=4)
+
+
+def test_automatic_repetition_ends_search(search_backend, model):
+    board = chess.Board()
+    for move in ["g1f3", "g8f6", "f3g1", "f6g8"] * 4:
+        board.push_uci(move)
+    assert board.is_fivefold_repetition()
+    assert search_backend.search(board, model, simulations=4) == {}
+
+
+def test_positive_search_budget_required(search_backend, model):
+    with pytest.raises(ValueError, match="simulations"):
+        search_backend.search(chess.Board(), model, simulations=0)
+
+
+@pytest.mark.parametrize("simulations,temperature", [(1, 1.0), (32, 0.001)])
+def test_sampling_extreme_budgets_and_temperatures(search_backend, model, simulations, temperature):
+    board = chess.Board()
+    assert search_backend.best_move(
+        board, model, simulations=simulations, temperature=temperature
+    ) in board.legal_moves
+
+
+def test_cpp_rejects_empty_batches(model):
+    from blundernet import mcts_cpp
+
+    if not mcts_cpp.AVAILABLE:
+        pytest.skip("C++ extension not built")
+    with pytest.raises(ValueError, match="batch_size"):
+        mcts_cpp.search(chess.Board(), model, batch_size=0)
+
+
+def test_search_preserves_history_in_simulations(search_backend, model, monkeypatch):
+    board = chess.Board()
+    board.push_uci("g1f3")
+    original_copy = chess.Board.copy
+    copied_stacks = []
+
+    def record_copy(self, *, stack=True):
+        copied = original_copy(self, stack=stack)
+        copied_stacks.append(list(copied.move_stack))
+        return copied
+
+    monkeypatch.setattr(chess.Board, "copy", record_copy)
+    search_backend.search(board, model, simulations=4)
+    assert copied_stacks
+    assert all(stack == board.move_stack for stack in copied_stacks)

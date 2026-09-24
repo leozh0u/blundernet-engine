@@ -97,11 +97,18 @@ python scripts/gauntlet.py                # play the baseline ladder
 python scripts/stockfish_bench.py         # needs stockfish on PATH
 ```
 
+## Development
+
+Run `make setup` once to create the local environment and compile the C++ core.
+Use `make check` for lint and tests, and `make clean` to remove build caches.
+Checkpoints and training data are preserved.
+
 ## Layout
 
 ```
 src/blundernet/   encoding, model, data ingestion, training, evaluation, MCTS
 cpp/              C++ tree core (pybind11)
+docs/             design decisions and experiment notes
 scripts/          pipeline, benchmarks, gauntlet, self-play, puzzle-set builder
 tests/            encoding, network shapes, search invariants, match bookkeeping
 metrics/          history CSVs, latest results, training curves
@@ -123,7 +130,7 @@ finding mate in one from an untrained net), and the match and Elo arithmetic the
 strength numbers are built on.
 
 Design choices, tradeoffs, and the bugs worth remembering are in
-[DECISIONS.md](DECISIONS.md).
+[Design decisions](docs/decisions.md).
 
 ## Roadmap
 

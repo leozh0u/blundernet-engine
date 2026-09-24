@@ -5,3 +5,11 @@ __pycache__/
 *.pyc
 .venv/
 .starvation_alarm
+
+# Development caches and editor files
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.DS_Store
+.env
+.env.*
