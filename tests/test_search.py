@@ -127,6 +127,12 @@ def test_positive_search_budget_required(search_backend, model):
         search_backend.search(chess.Board(), model, simulations=0)
 
 
+@pytest.mark.parametrize("simulations", [1, 2, 16, 17, 31])
+def test_every_backend_uses_the_exact_search_budget(search_backend, model, simulations):
+    visits = search_backend.search(chess.Board(), model, simulations=simulations)
+    assert sum(visits.values()) == simulations
+
+
 @pytest.mark.parametrize("simulations,temperature", [(1, 1.0), (32, 0.001)])
 def test_sampling_extreme_budgets_and_temperatures(search_backend, model, simulations, temperature):
     board = chess.Board()

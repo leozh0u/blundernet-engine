@@ -2,6 +2,8 @@ torch>=2.3
 numpy
 python-chess>=1.10
 requests
+certifi>=2026.10.19
+urllib3>=2.8.0
 matplotlib
 pybind11
 setuptools

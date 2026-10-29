@@ -68,7 +68,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p checkpoint
-          gh release download model-latest --pattern model.pt --dir checkpoint || echo "no checkpoint yet, cold start"
+          gh release download model-latest --pattern model.pt --dir checkpoint
 
       - name: Configure git author
         if: steps.guard.outputs.run == 'true'

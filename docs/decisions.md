@@ -25,21 +25,24 @@ completely measured, not to be strong.
   head small. A full move encoding with promotion pieces would add
   thousands of rarely-used outputs for almost no accuracy.
 
-## Why the network is small (about 450k parameters)
+## Why the network is small (2.57M parameters)
 
 6 residual blocks at 64 channels. Bigger networks predict more moves
 correctly, and Leela-class engines that actually rival Stockfish run
 networks 100 to 1000 times larger. But those need GPU training. On a free
-CI CPU a 450k-parameter network trains on a fresh batch in roughly two
-minutes, which is what makes continuous scheduled training possible at all.
+CI CPU the network trains on a fresh batch in roughly two minutes. The
+residual trunk has about 444k parameters; the 512-to-4096 policy projection
+accounts for about 2.1M more. This keeps scheduled CPU training practical.
 The size is a deliberate trade of peak strength for the ability to run
 forever unattended.
 
 ## Continuous training on scheduled CI
 
-The pipeline runs five times a day on GitHub Actions. Each run ingests new
-games, trains, evaluates, and commits the results, so the model improves
-whether or not any human is watching. The checkpoint persists between runs
+The primary workflow has two daily slots, but a date-based guard runs training
+on roughly two days in five. Two backup slots can run when an active day has
+no commits. A scheduled slot therefore does not prove training occurred.
+Successful runs ingest new games, train, evaluate, and commit results.
+The checkpoint persists between runs
 as a rolling GitHub release rather than a committed file, which keeps large
 binaries out of git history while still carrying learning forward.
 
@@ -52,8 +55,9 @@ binaries out of git history while still carrying learning forward.
   active by construction, which fixed the dry runs. `gather_batch` now also
   keeps pulling players until a run has at least 2000 positions.
 - **Per-player cursors plus game-id dedup.** Each player has a "seen up to"
-  timestamp and every game id is remembered, so no game is ever trained on
-  twice even across overlapping fetches.
+  timestamp and retained game IDs prevent duplicate samples across overlapping
+  fetches. Incremental exports run oldest first and the cursor stops at the last
+  exported game's timestamp, so the per-request limit cannot skip a backlog.
 - **Values are from the side to move's perspective.** A win for the player
   on move is +1 regardless of color, which is what the value head needs to
   predict a consistent target.
@@ -140,10 +144,20 @@ job has to leave a clean tree on every path, including the do-nothing path.
 
 ## Known limitations
 
-- **Strength is capped by design** at roughly 2000 to 2300 Elo. Closing the
-  gap to a top engine would need a much larger network, GPU training, and
-  heavy self-play, which would end the free-CI property that defines the
-  project.
+- **Checkpoint and ingest state are published separately.** A failure between
+  publishing the state commit and the rolling checkpoint can leave them out of
+  step. Checkpoint download failures now stop training rather than starting a
+  replacement model from random weights; publishing both as one versioned run
+  would require a different recovery protocol.
+- **Held-out move prediction is split by position, not by game.** Adjacent
+  positions from the same game can cross that boundary. The pipeline also
+  measures raw policy outputs without the optional legal-move mask. Interpret
+  those numbers accordingly; the fixed puzzle evaluation does mask legal moves.
+
+- **The architecture does not establish an Elo ceiling.** The small network
+  and CPU budget constrain training and search, but no experiment here proves
+  a 2000 to 2300 ceiling. Larger networks and more self-play are alternatives
+  with higher compute costs; their benefit would need to be measured.
 - **Underpromotions are approximated** as queen promotions in the policy
   head. Rare, but a real edge case the network cannot express.
 - **The Stockfish Elo estimate is approximate.** It anchors to published
