@@ -96,7 +96,7 @@ def main() -> None:
     from blundernet.train import load_model, save_model, train_on_batch
 
     model, opt, meta = load_model()
-    now = dt.datetime.now(dt.timezone.utc)
+    now = dt.datetime.now(dt.UTC)
     rng = np.random.default_rng(now.year * 10_000 + now.month * 100 + now.day + now.hour)
 
     # Commit count controls grouping; training volume scales with it so

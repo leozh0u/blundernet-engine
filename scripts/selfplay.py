@@ -121,7 +121,7 @@ def main() -> None:
     loss = train_on_selfplay(model, opt, meta, all_samples)
     save_model(model, opt, meta)
 
-    log = {"timestamp": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+    log = {"timestamp": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
            "games": args.games, "sims": args.sims, "results": results,
            "positions": len(all_samples), "loss": round(loss, 4),
            "steps": meta["steps"]}

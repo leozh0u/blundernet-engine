@@ -103,7 +103,7 @@ def pgn_to_samples(pgn_text: str, seen_ids: set | None = None,
             started = dt.datetime.strptime(
                 game.headers["UTCDate"] + " " + game.headers["UTCTime"],
                 "%Y.%m.%d %H:%M:%S",
-            ).replace(tzinfo=dt.timezone.utc)
+            ).replace(tzinfo=dt.UTC)
             latest_ms = max(latest_ms or 0, int(started.timestamp() * 1000))
         except (KeyError, ValueError):
             pass  # Missing timestamps must not advance the ingest cursor.

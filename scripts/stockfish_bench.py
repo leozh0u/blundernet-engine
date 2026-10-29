@@ -56,7 +56,7 @@ def main() -> None:
         return engine_mod.best_move(board, model, simulations=args.sims)
 
     sf = chess.engine.SimpleEngine.popen_uci(sf_path)
-    results = {"timestamp": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+    results = {"timestamp": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
                "steps": meta["steps"], "sims": args.sims,
                "games_per_level": args.games, "levels": {}}
     estimates = []
