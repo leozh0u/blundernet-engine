@@ -19,17 +19,20 @@ component rather than the thing driving strength. You can play it at
 ## What a scheduled run does
 
 1. Pulls new rated blitz and rapid games from the current top-50 Lichess
-   blitz leaderboard. Per-player cursors and game-id dedup guarantee no
-   game is trained on twice.
+   blitz leaderboard. Per-player cursors and retained game IDs avoid
+   replaying games across overlapping exports.
 2. Trains the network incrementally on the new positions.
-3. Evaluates on data it never trained on: top-1/top-3 move prediction on a
-   held-out slice, and a fixed suite of 1,200 Lichess tactics puzzles
+3. Evaluates top-1/top-3 move prediction on a held-out position slice,
+   and a fixed suite of 1,200 Lichess tactics puzzles
    bucketed by rating (800-1200 through 2400+).
 4. Commits the metrics and publishes the checkpoint as a rolling release,
-   so the numbers in this README stay current and the model keeps
-   improving across runs.
+   preserving the measured results and model across successful runs.
 
-Once a day it also plays: a baseline gauntlet (random mover,
+The position split is not isolated by game, and publishing the ingest state
+and checkpoint is not one transaction. These limits are recorded in
+[Design decisions](docs/decisions.md#known-limitations).
+
+Larger-budget active runs also play: a baseline gauntlet (random mover,
 material-greedy) plus rated matches against Stockfish at fixed skill
 levels, which anchor an Elo estimate over time
 ([metrics/stockfish_history.csv](metrics/stockfish_history.csv)), and two
@@ -57,8 +60,10 @@ flat C++ arrays behind a pybind11 API, and selection uses virtual loss so
 each pass collects a batch of leaves that the network evaluates in a
 single forward call. Batching is where the speedup comes from; batch-32
 inference costs about 20x a single call for 32x the work. End to end the
-C++ path searches about 1.8x faster at equal simulation counts, and the
-two implementations agree on the top move in deep searches.
+C++ path recorded about 1.8x faster searches at the same requested budget,
+and the two implementations agreed on the top move in deep searches. Those
+are historical measurements; the driver now enforces the exact simulation
+budget, and these timings have not been remeasured after that correction.
 
 The C++ side knows nothing about chess and Python never touches tree
 internals; the boundary is select_batch in, priors and values back.
@@ -81,8 +86,8 @@ supervised stream does most of the lifting.
 ## Honest numbers
 
 The engine is young. The first Stockfish anchor put it near 1000 Elo
-after two days of scheduled training, and the strength benchmarks run
-daily so the climb is recorded, not asserted. Current evaluation numbers
+after two days of scheduled training. Strength benchmarks run on selected
+training days; improvements and regressions are recorded. Latest saved evaluation numbers
 are in [metrics/latest.json](metrics/latest.json) and
 [metrics/stockfish.json](metrics/stockfish.json).
 

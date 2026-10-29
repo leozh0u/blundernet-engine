@@ -85,7 +85,7 @@ def train_on_selfplay(model, opt, meta, samples, batch_size=128):
         x = torch.from_numpy(np.stack([s[0] for s in chunk]))
         target = torch.zeros(len(chunk), POLICY_SIZE)
         for r, (_, idxs, probs, _) in enumerate(chunk):
-            target[r, idxs] = torch.from_numpy(probs)
+            target[r].scatter_add_(0, torch.from_numpy(idxs), torch.from_numpy(probs))
         z = torch.tensor([s[3] for s in chunk])
         logits, v = model(x)
         p_loss = -(target * F.log_softmax(logits, dim=1)).sum(dim=1).mean()
@@ -121,7 +121,7 @@ def main() -> None:
     loss = train_on_selfplay(model, opt, meta, all_samples)
     save_model(model, opt, meta)
 
-    log = {"timestamp": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+    log = {"timestamp": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
            "games": args.games, "sims": args.sims, "results": results,
            "positions": len(all_samples), "loss": round(loss, 4),
            "steps": meta["steps"]}

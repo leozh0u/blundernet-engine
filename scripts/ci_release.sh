@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 # Publish the checkpoint to the rolling release, tolerating transient API
-# errors. The commits are already pushed by the time this runs, so a failed
-# upload only means the next run resumes from a slightly older checkpoint.
-# That is worth a retry and a warning, never a failed run: GitHub's API
-# returns the occasional 503, and a red X over bookkeeping is pure noise.
+# errors. A failed upload leaves the published ingest state ahead of the model,
+# so exhausted retries must fail visibly rather than report successful training.
 set -uo pipefail
 
 if [ ! -f checkpoint/model.pt ]; then
@@ -23,5 +21,5 @@ for attempt in 1 2 3 4; do
   sleep $(( attempt * 10 ))
 done
 
-echo "::warning::checkpoint upload failed after 4 attempts; next run resumes from the previous checkpoint"
-exit 0
+echo "::error::checkpoint upload failed after 4 attempts; ingest state and model may be out of step"
+exit 1

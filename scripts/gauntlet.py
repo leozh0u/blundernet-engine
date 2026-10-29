@@ -58,7 +58,7 @@ def main() -> None:
     def mcts_engine(board: chess.Board) -> chess.Move:
         return best_move(board, model, simulations=args.sims)
 
-    results = {"timestamp": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+    results = {"timestamp": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
                "steps": meta["steps"], "sims": args.sims, "games_per_match": args.games}
     for engine_name, engine in [("policy", policy_only), ("mcts", mcts_engine)]:
         for opp_name, opp in [("random", random_mover), ("material", material_greedy)]:

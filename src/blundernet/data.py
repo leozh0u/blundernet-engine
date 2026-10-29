@@ -4,6 +4,7 @@ Keeps a cursor per player in data/state.json so every run trains on games
 it has never seen before. Raw PGNs are transient — only summary stats are
 committed to the repo.
 """
+import datetime as dt
 import io
 import json
 import time
@@ -68,6 +69,7 @@ def fetch_games(user: str, since_ms: int | None, max_games: int = 60) -> str:
     }
     if since_ms is not None:
         params["since"] = since_ms
+        params["sort"] = "dateAsc"
     for attempt in (1, 2):
         r = requests.get(
             API.format(user=user),
@@ -92,10 +94,19 @@ def pgn_to_samples(pgn_text: str, seen_ids: set | None = None,
     """
     stream = io.StringIO(pgn_text)
     n_games = 0
+    latest_ms = None
     while True:
         game = chess.pgn.read_game(stream)
         if game is None:
             break
+        try:
+            started = dt.datetime.strptime(
+                game.headers["UTCDate"] + " " + game.headers["UTCTime"],
+                "%Y.%m.%d %H:%M:%S",
+            ).replace(tzinfo=dt.UTC)
+            latest_ms = max(latest_ms or 0, int(started.timestamp() * 1000))
+        except (KeyError, ValueError):
+            pass  # Missing timestamps must not advance the ingest cursor.
         gid = game.headers.get("GameId", "")
         if seen_ids is not None:
             if gid in seen_ids:
@@ -112,7 +123,7 @@ def pgn_to_samples(pgn_text: str, seen_ids: set | None = None,
                 v = result if board.turn == chess.WHITE else -result
                 yield encode_board(board), move_to_index(move), v
             board.push(move)
-    yield None, n_games, None  # sentinel carrying game count
+    yield None, n_games, latest_ms  # sentinel carrying game count and exported cursor
 
 
 def gather_batch(n_players: int = 3, max_games: int = 100,
@@ -125,7 +136,6 @@ def gather_batch(n_players: int = 3, max_games: int = 100,
     seen_ids = set(state.get("seen_ids", []))
     xs, ps, vs = [], [], []
     used, games_total = [], 0
-    now_ms = int(time.time() * 1000)
 
     i = -1
     while (i := i + 1) < max_players:
@@ -135,27 +145,25 @@ def gather_batch(n_players: int = 3, max_games: int = 100,
         since = state["cursor"].get(user)
         try:
             pgn = fetch_games(user, since, max_games)
-            if not pgn.strip() and since is None:
-                pass  # player has no games at all
-            elif not pgn.strip():
-                # nothing new since cursor: grab their most recent games once
-                pgn = fetch_games(user, None, max_games)
         except requests.RequestException as e:
             print(f"fetch failed for {user}: {e}")
             continue
         n_games = 0
+        latest_ms = None
         for x, p, v in pgn_to_samples(pgn, seen_ids):
             if x is None:
                 n_games = p
+                latest_ms = v
                 break
             xs.append(x); ps.append(p); vs.append(v)
         games_total += n_games
-        state["cursor"][user] = now_ms
+        if latest_ms is not None:
+            state["cursor"][user] = max(since or 0, latest_ms)
         used.append({"player": user, "games": n_games})
         time.sleep(3)  # be polite to the API
 
     state["rotation"] = (state["rotation"] + i) % len(players)
-    state["seen_ids"] = sorted(seen_ids)[-20000:]  # cap state file size
+    state["seen_ids"] = sorted(seen_ids)
     state["total_games"] += games_total
     state["total_positions"] += len(xs)
     save_state(state)

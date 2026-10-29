@@ -57,6 +57,8 @@ def main() -> None:
         if seen % 50000 == 0:
             print(f"scanned {seen:,}  filled {dict(counts)}", file=sys.stderr)
     proc.terminate()
+    if not all(c >= PER_BUCKET for c in counts.values()):
+        raise RuntimeError(f"incomplete puzzle download; existing suite unchanged: {counts}")
 
     rows.sort(key=lambda x: int(x["Rating"]))
     OUT.parent.mkdir(exist_ok=True)

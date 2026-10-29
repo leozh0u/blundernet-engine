@@ -2,7 +2,7 @@ name: train
 
 on:
   schedule:
-    # 2 slots/day (UTC): morning always trains, afternoon joins ~half of days
+    # Two primary slots per day (UTC); the date guard below selects active days.
     - cron: "23 2 * * *"
     - cron: "41 14 * * *"
   workflow_dispatch:
@@ -39,7 +39,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p checkpoint
-          gh release download model-latest --pattern model.pt --dir checkpoint || echo "no checkpoint yet, cold start"
+          gh release download model-latest --pattern model.pt --dir checkpoint
 
       - name: Configure git author
         run: |

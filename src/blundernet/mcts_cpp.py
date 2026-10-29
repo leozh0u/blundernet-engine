@@ -62,8 +62,10 @@ def search(board: chess.Board, model, simulations: int = 200,
             tree.add_root_noise(np.random.dirichlet([0.3] * n).tolist(),
                                 dirichlet_eps)
 
-    while tree.root_visits() < simulations:
-        leaf_ids, paths = tree.select_batch(batch_size)
+    # Root expansion is bookkeeping, not a simulation of a candidate move.
+    while tree.root_visits() - 1 < simulations:
+        remaining = simulations - (tree.root_visits() - 1)
+        leaf_ids, paths = tree.select_batch(min(batch_size, remaining))
         if not leaf_ids:
             break  # every path converged on an in-flight leaf
         boards = []
